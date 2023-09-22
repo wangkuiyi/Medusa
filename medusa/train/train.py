@@ -364,9 +364,12 @@ def train():
         config.rope_scaling = {"type": "linear", "factor": scaling_factor}
     config.use_cache = False
 
+    # MPS does not support bfloat16
+    dtype = torch.float32 if torch.backends.mps.is_available() else torch.bfloat16
+
     quantization_config = BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_compute_dtype=dtype,
         bnb_4bit_use_double_quant=True,
         bnb_4bit_quant_type="nf4",
     )
@@ -377,7 +380,7 @@ def train():
         config=config,
         cache_dir=training_args.cache_dir,
         low_cpu_mem_usage=True,
-        torch_dtype=torch.bfloat16,
+        torch_dtype=dtype,
         quantization_config=quantization_config if model_args.load_in_4bit else None,
         load_in_4bit=model_args.load_in_4bit,
         load_in_8bit=model_args.load_in_8bit,
